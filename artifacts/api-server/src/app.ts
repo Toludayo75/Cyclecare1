@@ -8,14 +8,19 @@ import { logger } from "./lib/logger";
 
 const app: Express = express();
 
+function normalizeOrigin(origin: string | undefined) {
+  return origin?.trim().replace(/\/+$/, "").toLowerCase() ?? "";
+}
+
 const allowedOrigins = (process.env["ALLOWED_ORIGINS"] ?? "http://localhost:4173,http://localhost:4174,http://localhost:4176,http://localhost:19006")
   .split(",")
-  .map((origin) => origin.trim())
+  .map(normalizeOrigin)
   .filter(Boolean);
 
 const corsOptions = {
   origin(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const normalizedOrigin = normalizeOrigin(origin);
+    if (!normalizedOrigin || allowedOrigins.includes(normalizedOrigin)) {
       callback(null, true);
       return;
     }
