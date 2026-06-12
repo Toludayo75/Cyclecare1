@@ -12,10 +12,25 @@ function normalizeOrigin(origin: string | undefined) {
   return origin?.trim().replace(/\/+$/, "").toLowerCase() ?? "";
 }
 
-const allowedOrigins = (process.env["ALLOWED_ORIGINS"] ?? "http://localhost:4173,http://localhost:4174,http://localhost:4176,http://localhost:19006")
+const defaultAllowedOrigins = [
+  "http://localhost:4173",
+  "http://localhost:4174",
+  "http://localhost:4176",
+  "http://localhost:19006",
+  "https://cyclecareadmin.netlify.app",
+  "https://cyclecarengo.netlify.app",
+  "https://cyclecarepublic.netlify.app",
+  "https://cyclecare-api.onrender.com",
+];
+
+const envOrigins = (process.env["ALLOWED_ORIGINS"] ?? "")
   .split(",")
   .map(normalizeOrigin)
   .filter(Boolean);
+
+const allowedOrigins = Array.from(
+  new Set([...envOrigins, ...defaultAllowedOrigins].map(normalizeOrigin)),
+);
 
 const corsOptions = {
   origin(origin: string | undefined, callback: (err: Error | null, allow?: boolean) => void) {
