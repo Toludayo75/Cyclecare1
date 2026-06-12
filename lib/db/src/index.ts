@@ -15,20 +15,28 @@ function normalizeDatabaseUrl(raw: string) {
   try {
     const url = new URL(raw);
     const sslRootCert = url.searchParams.get("sslrootcert");
+    const sslMode = url.searchParams.get("sslmode");
 
     if (sslRootCert && !fs.existsSync(sslRootCert)) {
       url.searchParams.delete("sslrootcert");
     }
 
-    return url.toString();
+    return { url: url.toString(), sslMode };
   } catch {
-    return raw;
+    return { url: raw, sslMode: null };
   }
 }
 
-export const pool = new Pool({
-  connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL),
-});
+const { url: normalizedDatabaseUrl, sslMode } = normalizeDatabaseUrl(process.env.DATABASE_URL);
+const poolConfig: pg.PoolConfig = {
+  connectionString: normalizedDatabaseUrl,
+};
+
+if (sslMode && ["require", "prefer", "verify-ca", "verify-full"].includes(sslMode)) {
+  poolConfig.ssl = { rejectUnauthorized: false };
+}
+
+export const pool = new Pool(poolConfig);
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
