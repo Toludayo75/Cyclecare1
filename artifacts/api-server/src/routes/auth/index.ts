@@ -91,10 +91,12 @@ router.post("/auth/login", async (req, res): Promise<void> => {
     return;
   }
 
+  const normalizedEmail = email.trim().toLowerCase();
+
   const [user] = await db
     .select()
     .from(usersTable)
-    .where(or(eq(usersTable.email, email), eq(usersTable.phone, email)))
+    .where(eq(usersTable.email, normalizedEmail))
     .limit(1);
 
   if (!user) {
