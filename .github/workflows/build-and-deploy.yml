@@ -1,0 +1,106 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    env:
+      API_BASE_URL: https://cyclecare-api.onrender.com
+      VITE_API_URL: https://cyclecare-api.onrender.com
+      BASE_PATH: /
+      NODE_ENV: production
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: pnpm/action-setup@v2
+        with:
+          version: latest
+      
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+          cache: 'pnpm'
+      
+      - name: Install dependencies
+        run: pnpm install
+      
+      - name: Build all packages
+        run: pnpm -w build
+      
+      - name: Build API
+        run: pnpm --filter @workspace/api-server run build
+      
+      - name: Build Admin Dashboard
+        run: pnpm --filter @workspace/admin run build
+      
+      - name: Build NGO Portal
+        run: pnpm --filter @workspace/ngo-portal run build
+      
+      - name: Build Public Dashboard
+        run: pnpm --filter @workspace/public-dashboard run build
+      
+      - name: Upload API dist to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: api-dist
+          path: artifacts/api-server/dist
+      
+      - name: Upload Admin dist to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: admin-dist
+          path: artifacts/admin/dist/public
+      
+      - name: Upload NGO dist to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: ngo-dist
+          path: artifacts/ngo-portal/dist
+      
+      - name: Upload Public dist to artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: public-dist
+          path: artifacts/public-dashboard/dist
+
+  deploy-api:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - name: Deploy to Render
+        run: |
+          curl -X POST https://api.render.com/deploy/srv-${{ secrets.RENDER_SERVICE_ID }}?key=${{ secrets.RENDER_DEPLOY_KEY }}
+        env:
+          RENDER_SERVICE_ID: ${{ secrets.RENDER_SERVICE_ID }}
+          RENDER_DEPLOY_KEY: ${{ secrets.RENDER_DEPLOY_KEY }}
+
+  deploy-web:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+      - uses: actions/checkout@v3
+      
+      - uses: actions/download-artifact@v3
+      
+      - name: Deploy Admin to Netlify
+        run: |
+          npm install -g netlify-cli
+          netlify deploy --prod --dir=admin-dist --site=${{ secrets.NETLIFY_ADMIN_SITE_ID }} --auth=${{ secrets.NETLIFY_AUTH_TOKEN }}
+      
+      - name: Deploy NGO Portal to Netlify
+        run: |
+          netlify deploy --prod --dir=ngo-dist --site=${{ secrets.NETLIFY_NGO_SITE_ID }} --auth=${{ secrets.NETLIFY_AUTH_TOKEN }}
+      
+      - name: Deploy Public Dashboard to Netlify
+        run: |
+          netlify deploy --prod --dir=public-dist --site=${{ secrets.NETLIFY_PUBLIC_SITE_ID }} --auth=${{ secrets.NETLIFY_AUTH_TOKEN }}
