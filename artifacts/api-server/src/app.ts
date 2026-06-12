@@ -22,6 +22,7 @@ const corsOptions = {
     callback(new Error("CORS origin denied"));
   },
   credentials: true,
+  optionsSuccessStatus: 200,
 };
 
 const globalLimiter = rateLimit({
@@ -80,6 +81,11 @@ app.use("/api", router);
 
 // Error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  if (err?.message === "CORS origin denied") {
+    res.status(403).json({ error: "CORS origin denied" });
+    return;
+  }
+
   logger.error({ err }, "Unhandled error");
   res.status(err.status || 500).json({ error: err.message || "Internal server error" });
 });
