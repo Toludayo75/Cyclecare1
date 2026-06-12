@@ -1,0 +1,28 @@
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "preinstall": "node ./preinstall.js",
+    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "typecheck:libs": "tsc --build",
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "db:setup": "node ./lib/db/create-tables.mjs",
+    "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File ./deploy.ps1",
+    "start:all": "powershell -NoProfile -ExecutionPolicy Bypass -File ./start-all.ps1",
+    "start:mobile": "powershell -NoProfile -ExecutionPolicy Bypass -Command \". .\\load-env.ps1; pnpm --filter @workspace/cyclecare dev\"",
+    "start:admin": "powershell -NoProfile -ExecutionPolicy Bypass -Command \". .\\load-env.ps1; $env:PORT=4173; $env:BASE_PATH='/'; pnpm --filter @workspace/admin dev\"",
+    "start:ngo": "powershell -NoProfile -ExecutionPolicy Bypass -Command \". .\\load-env.ps1; $env:PORT=4174; $env:BASE_PATH='/'; pnpm --filter @workspace/ngo-portal dev\"",
+    "start:api": "powershell -NoProfile -ExecutionPolicy Bypass -Command \". .\\load-env.ps1; pnpm --filter @workspace/api-server run start\""
+  },
+  "private": true,
+  "devDependencies": {
+    "prettier": "^3.8.3",
+    "typescript": "~5.9.3"
+  },
+  "dependencies": {
+    "@rollup/rollup-win32-x64-msvc": "4.60.3",
+    "@tailwindcss/oxide-win32-x64-msvc": "4.3.0",
+    "lightningcss-win32-x64-msvc": "1.32.0"
+  }
+}

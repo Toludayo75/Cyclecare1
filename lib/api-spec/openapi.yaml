@@ -1,0 +1,1675 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: CycleCare API specification
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: auth
+    description: Authentication operations
+  - name: cycle
+    description: Cycle tracking operations
+  - name: requests
+    description: Pad request operations
+  - name: articles
+    description: Health education articles
+  - name: admin
+    description: Admin-only operations
+  - name: ngo
+    description: NGO worker operations
+
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /auth/register:
+    post:
+      operationId: register
+      tags: [auth]
+      summary: Register a new user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterInput"
+      responses:
+        "201":
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Email already in use
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/login:
+    post:
+      operationId: login
+      tags: [auth]
+      summary: Login with email/phone and password
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginInput"
+      responses:
+        "200":
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/logout:
+    post:
+      operationId: logout
+      tags: [auth]
+      summary: Logout current user
+      security:
+        - bearerAuth: []
+      responses:
+        "204":
+          description: Logged out successfully
+
+  /auth/me:
+    get:
+      operationId: getMe
+      tags: [auth]
+      summary: Get current authenticated user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Current user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    patch:
+      operationId: updateMe
+      tags: [auth]
+      summary: Update current user profile
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileInput"
+      responses:
+        "200":
+          description: Updated user
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "401":
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/change-password:
+    post:
+      operationId: changePassword
+      tags: [auth]
+      summary: Change authenticated user password
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordInput"
+      responses:
+        "200":
+          description: Password changed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "400":
+          description: Invalid input or new password too short
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "401":
+          description: Current password incorrect
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /auth/forgot-password:
+    post:
+      operationId: forgotPassword
+      tags: [auth]
+      summary: Request a password reset
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ForgotPasswordInput"
+      responses:
+        "200":
+          description: Reset instructions sent
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /cycle/profile:
+    get:
+      operationId: getCycleProfile
+      tags: [cycle]
+      summary: Get cycle profile for current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Cycle profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CycleProfile"
+        "404":
+          description: Profile not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: saveCycleProfile
+      tags: [cycle]
+      summary: Save or update cycle profile (onboarding)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CycleProfileInput"
+      responses:
+        "200":
+          description: Cycle profile saved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CycleProfile"
+        "400":
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cycle/logs:
+    get:
+      operationId: getCycleLogs
+      tags: [cycle]
+      summary: Get cycle logs for current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: List of cycle logs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/CycleLog"
+    post:
+      operationId: createCycleLog
+      tags: [cycle]
+      summary: Log period data
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CycleLogInput"
+      responses:
+        "201":
+          description: Cycle log created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CycleLog"
+
+  /requests:
+    get:
+      operationId: getRequests
+      tags: [requests]
+      summary: Get pad requests and allocation summary for current user
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Requests summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequestsSummary"
+    post:
+      operationId: createRequest
+      tags: [requests]
+      summary: Submit a new pad request
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateRequestInput"
+      responses:
+        "201":
+          description: Request created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PadRequest"
+        "400":
+          description: Invalid input or allocation exceeded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+        "409":
+          description: Active request already exists this month
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /requests/{id}/collect:
+    patch:
+      operationId: markRequestCollected
+      tags: [requests]
+      summary: Mark a pad request as collected
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request marked collected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PadRequest"
+        "404":
+          description: Request not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cycle/dashboard:
+    get:
+      operationId: getCycleDashboard
+      tags: [cycle]
+      summary: Get cycle dashboard summary (next period, current phase, predictions)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CycleDashboard"
+
+  # ── Public Articles ─────────────────────────────────────────────────────────
+  /articles:
+    get:
+      operationId: listArticles
+      tags: [articles]
+      summary: List published articles (optionally filtered by language)
+      parameters:
+        - name: lang
+          in: query
+          schema:
+            type: string
+            enum: [en, yo, ig, ha]
+        - name: category
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: List of articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArticlePublic"
+
+  # ── Admin ────────────────────────────────────────────────────────────────────
+  /admin/stats:
+    get:
+      operationId: getAdminStats
+      tags: [admin]
+      summary: Dashboard summary counts
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminStats"
+
+  /admin/articles:
+    get:
+      operationId: adminListArticles
+      tags: [admin]
+      summary: List all articles (published + drafts)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: All articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ArticleAdmin"
+    post:
+      operationId: adminCreateArticle
+      tags: [admin]
+      summary: Create a new article (auto-translates from English)
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleInput"
+      responses:
+        "201":
+          description: Article created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleAdmin"
+
+  /admin/articles/{id}:
+    put:
+      operationId: adminUpdateArticle
+      tags: [admin]
+      summary: Update an article
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ArticleInput"
+      responses:
+        "200":
+          description: Article updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArticleAdmin"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: adminDeleteArticle
+      tags: [admin]
+      summary: Delete an article
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/users:
+    get:
+      operationId: adminListUsers
+      tags: [admin]
+      summary: List all users
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+        - name: limit
+          in: query
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Paginated users
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUserList"
+
+  /admin/users/{id}:
+    get:
+      operationId: adminGetUser
+      tags: [admin]
+      summary: Get a single user detail
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: User detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AdminUser"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /admin/ngos:
+    get:
+      operationId: adminListNgos
+      tags: [admin]
+      summary: List all NGO organisations
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: NGO list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Ngo"
+    post:
+      operationId: adminCreateNgo
+      tags: [admin]
+      summary: Register a new NGO
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NgoInput"
+      responses:
+        "201":
+          description: NGO created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ngo"
+
+  /admin/ngos/{id}:
+    put:
+      operationId: adminUpdateNgo
+      tags: [admin]
+      summary: Update an NGO
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/NgoInput"
+      responses:
+        "200":
+          description: NGO updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ngo"
+    delete:
+      operationId: adminDeleteNgo
+      tags: [admin]
+      summary: Delete an NGO
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/ngos/{id}/workers:
+    get:
+      operationId: adminListNgoWorkers
+      tags: [admin]
+      summary: List workers for an NGO
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Workers list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AdminUser"
+        "404":
+          description: NGO not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    post:
+      operationId: adminAddNgoWorker
+      tags: [admin]
+      summary: Add a user as NGO worker
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddNgoWorkerInput"
+      responses:
+        "201":
+          description: Worker added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+
+  /admin/users/{id}/reset-password:
+    put:
+      operationId: adminResetUserPassword
+      tags: [admin]
+      summary: Reset a user's password
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ResetPasswordInput"
+      responses:
+        "200":
+          description: Password updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessageResponse"
+        "404":
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  # ── NGO Portal ───────────────────────────────────────────────────────────────
+  /ngo/me:
+    get:
+      operationId: getNgoProfile
+      tags: [ngo]
+      summary: Get the NGO this worker belongs to
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: NGO profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ngo"
+
+  /ngo/stats:
+    get:
+      operationId: getNgoStats
+      tags: [ngo]
+      summary: Request stats for this NGO (pending/approved/rejected counts)
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: NGO stats
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NgoStats"
+
+  /ngo/requests:
+    get:
+      operationId: ngoListRequests
+      tags: [ngo]
+      summary: List pad requests scoped to this NGO's region
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, approved, ready, collected, rejected]
+      responses:
+        "200":
+          description: Requests list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NgoRequest"
+
+  /ngo/requests/{id}/approve:
+    put:
+      operationId: ngoApproveRequest
+      tags: [ngo]
+      summary: Approve a pad request and assign pickup details
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ApproveRequestInput"
+      responses:
+        "200":
+          description: Request approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NgoRequest"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ngo/requests/{id}/reject:
+    put:
+      operationId: ngoRejectRequest
+      tags: [ngo]
+      summary: Reject a pad request
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NgoRequest"
+
+  /ngo/inventory/add:
+    post:
+      operationId: addNgoInventory
+      tags: [ngo]
+      summary: Add pads to NGO inventory
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddInventoryInput"
+      responses:
+        "200":
+          description: Updated NGO profile with new available pads count
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Ngo"
+
+  /ngo/requests/{id}/ready:
+    put:
+      operationId: ngoMarkRequestReady
+      tags: [ngo]
+      summary: Mark an approved request as ready for pickup
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Request marked ready
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NgoRequest"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /ngo/pickup-centers:
+    get:
+      operationId: listPickupCenters
+      tags: [ngo]
+      summary: List pickup centers for this NGO
+      security:
+        - bearerAuth: []
+      responses:
+        "200":
+          description: Pickup centers list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/NgoPickupCenter"
+    post:
+      operationId: createPickupCenter
+      tags: [ngo]
+      summary: Create a new pickup center
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PickupCenterInput"
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NgoPickupCenter"
+
+  /ngo/pickup-centers/{id}:
+    put:
+      operationId: updatePickupCenter
+      tags: [ngo]
+      summary: Update a pickup center
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PickupCenterInput"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NgoPickupCenter"
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+    delete:
+      operationId: deletePickupCenter
+      tags: [ngo]
+      summary: Delete a pickup center
+      security:
+        - bearerAuth: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+        "404":
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+      required:
+        - error
+
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+
+    User:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        role:
+          type: string
+        hasCompletedOnboarding:
+          type: boolean
+        age:
+          type: ["integer", "null"]
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - role
+        - hasCompletedOnboarding
+        - createdAt
+
+    UpdateProfileInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        age:
+          type: ["integer", "null"]
+          minimum: 10
+          maximum: 100
+        address:
+          type: ["string", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+
+    RegisterInput:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+        password:
+          type: string
+          minLength: 6
+        phone:
+          type: ["string", "null"]
+      required:
+        - name
+        - email
+        - password
+
+    LoginInput:
+      type: object
+      properties:
+        email:
+          type: string
+        password:
+          type: string
+      required:
+        - email
+        - password
+
+    ForgotPasswordInput:
+      type: object
+      properties:
+        email:
+          type: string
+      required:
+        - email
+
+    ChangePasswordInput:
+      type: object
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+          minLength: 6
+      required:
+        - currentPassword
+        - newPassword
+
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - token
+        - user
+
+    PadRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        quantity:
+          type: integer
+        status:
+          type: string
+          enum: [pending, approved, ready, collected, rejected]
+        pickupCode:
+          type: string
+        pickupLocation:
+          type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - quantity
+        - status
+        - pickupCode
+        - pickupLocation
+        - createdAt
+        - updatedAt
+
+    RequestsSummary:
+      type: object
+      properties:
+        allocation:
+          type: object
+          properties:
+            total:
+              type: integer
+            used:
+              type: integer
+            remaining:
+              type: integer
+          required:
+            - total
+            - used
+            - remaining
+        currentRequest:
+          oneOf:
+            - $ref: "#/components/schemas/PadRequest"
+            - type: "null"
+        history:
+          type: array
+          items:
+            $ref: "#/components/schemas/PadRequest"
+      required:
+        - allocation
+        - currentRequest
+        - history
+
+    CreateRequestInput:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+          maximum: 25
+        notes:
+          type: ["string", "null"]
+      required:
+        - quantity
+
+    CycleProfile:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        lastPeriodDate:
+          type: string
+        cycleLength:
+          type: integer
+        periodDuration:
+          type: integer
+        flowType:
+          type: string
+          enum: [light, medium, heavy]
+        notificationsEnabled:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - userId
+        - lastPeriodDate
+        - cycleLength
+        - periodDuration
+        - flowType
+        - notificationsEnabled
+        - createdAt
+        - updatedAt
+
+    CycleProfileInput:
+      type: object
+      properties:
+        lastPeriodDate:
+          type: string
+        cycleLength:
+          type: integer
+          minimum: 21
+          maximum: 45
+        periodDuration:
+          type: integer
+          minimum: 1
+          maximum: 10
+        flowType:
+          type: string
+          enum: [light, medium, heavy]
+        notificationsEnabled:
+          type: boolean
+      required:
+        - lastPeriodDate
+        - cycleLength
+        - periodDuration
+        - flowType
+        - notificationsEnabled
+
+    CycleLog:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        startDate:
+          type: string
+        endDate:
+          type: ["string", "null"]
+        flowIntensity:
+          type: string
+          enum: [light, medium, heavy]
+        symptoms:
+          type: array
+          items:
+            type: string
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - startDate
+        - flowIntensity
+        - symptoms
+        - createdAt
+
+    CycleLogInput:
+      type: object
+      properties:
+        startDate:
+          type: string
+        endDate:
+          type: ["string", "null"]
+        flowIntensity:
+          type: string
+          enum: [light, medium, heavy]
+        symptoms:
+          type: array
+          items:
+            type: string
+        notes:
+          type: ["string", "null"]
+      required:
+        - startDate
+        - flowIntensity
+        - symptoms
+
+    CycleDashboard:
+      type: object
+      properties:
+        currentPhase:
+          type: string
+          enum: [menstrual, follicular, ovulation, luteal, unknown]
+        nextPeriodDate:
+          type: ["string", "null"]
+        daysUntilNextPeriod:
+          type: ["integer", "null"]
+        fertileWindowStart:
+          type: ["string", "null"]
+        fertileWindowEnd:
+          type: ["string", "null"]
+        cycleDay:
+          type: ["integer", "null"]
+        lastPeriodDate:
+          type: ["string", "null"]
+        periodDuration:
+          type: ["integer", "null"]
+      required:
+        - currentPhase
+
+    # ── Article schemas ────────────────────────────────────────────────────────
+    ArticlePublic:
+      type: object
+      properties:
+        id:
+          type: integer
+        title:
+          type: string
+        excerpt:
+          type: string
+        body:
+          type: string
+        category:
+          type: string
+        readMin:
+          type: integer
+      required:
+        - id
+        - title
+        - excerpt
+        - body
+        - category
+        - readMin
+
+    ArticleAdmin:
+      type: object
+      properties:
+        id:
+          type: integer
+        titleEn:
+          type: string
+        titleYo:
+          type: ["string", "null"]
+        titleIg:
+          type: ["string", "null"]
+        titleHa:
+          type: ["string", "null"]
+        bodyEn:
+          type: string
+        bodyYo:
+          type: ["string", "null"]
+        bodyIg:
+          type: ["string", "null"]
+        bodyHa:
+          type: ["string", "null"]
+        excerptEn:
+          type: string
+        excerptYo:
+          type: ["string", "null"]
+        excerptIg:
+          type: ["string", "null"]
+        excerptHa:
+          type: ["string", "null"]
+        category:
+          type: string
+        readMin:
+          type: integer
+        published:
+          type: boolean
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - titleEn
+        - bodyEn
+        - excerptEn
+        - category
+        - readMin
+        - published
+        - createdAt
+        - updatedAt
+
+    ArticleInput:
+      type: object
+      properties:
+        titleEn:
+          type: string
+        bodyEn:
+          type: string
+        excerptEn:
+          type: string
+        category:
+          type: string
+        readMin:
+          type: integer
+        published:
+          type: boolean
+      required:
+        - titleEn
+        - bodyEn
+        - excerptEn
+        - category
+
+    # ── NGO schemas ────────────────────────────────────────────────────────────
+    Ngo:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        region:
+          type: string
+        state:
+          type: string
+        contactEmail:
+          type: string
+        monthlyQuota:
+          type: integer
+        availablePads:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - region
+        - state
+        - contactEmail
+        - monthlyQuota
+        - availablePads
+        - createdAt
+
+    NgoInput:
+      type: object
+      properties:
+        name:
+          type: string
+        region:
+          type: string
+        state:
+          type: string
+        contactEmail:
+          type: string
+        monthlyQuota:
+          type: integer
+      required:
+        - name
+        - region
+        - state
+        - contactEmail
+
+    AddNgoWorkerInput:
+      type: object
+      properties:
+        userId:
+          type: integer
+      required:
+        - userId
+
+    NgoStats:
+      type: object
+      properties:
+        pending:
+          type: integer
+        approved:
+          type: integer
+        rejected:
+          type: integer
+        collected:
+          type: integer
+        totalThisMonth:
+          type: integer
+      required:
+        - pending
+        - approved
+        - rejected
+        - collected
+        - totalThisMonth
+
+    NgoRequest:
+      type: object
+      properties:
+        id:
+          type: integer
+        userId:
+          type: integer
+        userName:
+          type: string
+        userEmail:
+          type: ["string", "null"]
+        userAddress:
+          type: ["string", "null"]
+        userCity:
+          type: ["string", "null"]
+        userState:
+          type: ["string", "null"]
+        quantity:
+          type: integer
+        status:
+          type: string
+          enum: [pending, approved, ready, collected, rejected]
+        pickupCode:
+          type: ["string", "null"]
+        pickupLocation:
+          type: ["string", "null"]
+        notes:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - userId
+        - userName
+        - quantity
+        - status
+        - createdAt
+
+    ApproveRequestInput:
+      type: object
+      properties:
+        pickupCenterId:
+          type: integer
+        pickupLocation:
+          type: string
+      required:
+        - pickupCenterId
+        - pickupLocation
+
+    AddInventoryInput:
+      type: object
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+      required:
+        - quantity
+
+    NgoPickupCenter:
+      type: object
+      properties:
+        id:
+          type: integer
+        ngoId:
+          type: integer
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        landmark:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+        updatedAt:
+          type: string
+      required:
+        - id
+        - ngoId
+        - name
+        - address
+        - city
+        - state
+        - createdAt
+        - updatedAt
+
+    PickupCenterInput:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        city:
+          type: string
+        state:
+          type: string
+        landmark:
+          type: string
+      required:
+        - name
+        - address
+        - city
+        - state
+
+    # ── Admin schemas ──────────────────────────────────────────────────────────
+    AdminStats:
+      type: object
+      properties:
+        totalUsers:
+          type: integer
+        activeNgos:
+          type: integer
+        pendingRequests:
+          type: integer
+        publishedArticles:
+          type: integer
+        requestsThisMonth:
+          type: integer
+      required:
+        - totalUsers
+        - activeNgos
+        - pendingRequests
+        - publishedArticles
+        - requestsThisMonth
+
+    ResetPasswordInput:
+      type: object
+      properties:
+        newPassword:
+          type: string
+          minLength: 6
+      required:
+        - newPassword
+
+    AdminUser:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        email:
+          type: ["string", "null"]
+        phone:
+          type: ["string", "null"]
+        role:
+          type: string
+        hasCompletedOnboarding:
+          type: boolean
+        age:
+          type: ["integer", "null"]
+        city:
+          type: ["string", "null"]
+        state:
+          type: ["string", "null"]
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - role
+        - hasCompletedOnboarding
+        - createdAt
+
+    AdminUserList:
+      type: object
+      properties:
+        users:
+          type: array
+          items:
+            $ref: "#/components/schemas/AdminUser"
+        total:
+          type: integer
+        page:
+          type: integer
+        limit:
+          type: integer
+      required:
+        - users
+        - total
+        - page
+        - limit

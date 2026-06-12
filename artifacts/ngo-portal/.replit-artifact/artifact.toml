@@ -1,0 +1,31 @@
+kind = "web"
+previewPath = "/ngo-portal/"
+title = "CycleCare NGO Portal"
+version = "1.0.0"
+id = "artifacts/ngo-portal"
+router = "path"
+
+[[integratedSkills]]
+name = "react-vite"
+version = "1.0.0"
+
+[[services]]
+name = "web"
+paths = [ "/ngo-portal/" ]
+localPort = 25761
+
+[services.development]
+run = "pnpm --filter @workspace/ngo-portal run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/ngo-portal", "run", "build" ]
+publicDir = "artifacts/ngo-portal/dist"
+serve = "static"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "25761"
+BASE_PATH = "/ngo-portal/"

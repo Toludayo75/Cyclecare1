@@ -1,0 +1,15 @@
+const fs = require("fs");
+
+for (const file of ["package-lock.json", "yarn.lock"]) {
+  try {
+    fs.unlinkSync(file);
+  } catch {
+    // ignore missing files
+  }
+}
+
+const userAgent = process.env.npm_config_user_agent || "";
+if (!/^pnpm\//.test(userAgent)) {
+  console.error("Use pnpm instead");
+  process.exit(1);
+}
