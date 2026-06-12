@@ -71,6 +71,8 @@ Value: (you'll get this when creating public site on Netlify)
    - **Start Command**: `node artifacts/api-server/dist/index.mjs`
    - **Environment**: Production
 
+> Render provides `PORT` automatically for the web service, and the app already reads `process.env.PORT`. Do not override the Render-assigned port with a fixed value unless you know the platform requires it.
+
 ### Step 3: Add environment variables
 1. In Render dashboard → Your service → **Environment**
 2. Add all these variables (values from Step 1):
@@ -78,7 +80,11 @@ Value: (you'll get this when creating public site on Netlify)
    - SESSION_SECRET
    - PAYSTACK_SECRET_KEY
    - ALLOWED_ORIGINS
-   - PORT=3000
+   - No manual `PORT` is required in Render environment unless explicitly needed by your service
+
+> Render uses its own dynamically assigned port. The app is already configured to bind to `process.env.PORT`.
+
+> For `DATABASE_URL`, use the Aiven-provided connection string and remove any local file path references like `sslrootcert=C:/Users/Hp/.../ca.pem`. Render cannot access files on your local machine.
 
 ### Step 4: Deploy
 1. Render will auto-deploy from your GitHub repo

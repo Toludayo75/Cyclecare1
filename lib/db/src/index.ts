@@ -1,3 +1,4 @@
+import fs from "node:fs";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "./schema";
@@ -10,7 +11,24 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
-export const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+function normalizeDatabaseUrl(raw: string) {
+  try {
+    const url = new URL(raw);
+    const sslRootCert = url.searchParams.get("sslrootcert");
+
+    if (sslRootCert && !fs.existsSync(sslRootCert)) {
+      url.searchParams.delete("sslrootcert");
+    }
+
+    return url.toString();
+  } catch {
+    return raw;
+  }
+}
+
+export const pool = new Pool({
+  connectionString: normalizeDatabaseUrl(process.env.DATABASE_URL),
+});
 export const db = drizzle(pool, { schema });
 
 export * from "./schema";
