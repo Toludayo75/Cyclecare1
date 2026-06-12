@@ -121,6 +121,9 @@ Repeat Step 2 but:
    - **Build command**: `pnpm --filter @workspace/public-dashboard run build`
    - Copy the Site ID (NETLIFY_PUBLIC_SITE_ID)
 
+> If you use client-side routing, Netlify needs a redirect rule so refreshes and direct URLs resolve to `index.html`.
+> The repo already includes `public/_redirects` for the frontends, so you should not need extra Netlify redirect setup.
+
 ### Step 5: Get Netlify Auth Token
 1. **User settings** → **Applications**
 2. Create a **Personal access token**
