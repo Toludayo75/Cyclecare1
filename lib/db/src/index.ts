@@ -23,6 +23,13 @@ function normalizeDatabaseUrl(raw: string) {
       url.searchParams.delete("sslrootcert");
     }
 
+    // When we manage SSL explicitly via the pg client, remove
+    // sslmode from the connection string so pg does not re-interpret
+    // it with libpq compatibility semantics.
+    if (sslMode && ["require", "prefer", "verify-ca", "verify-full"].includes(sslMode)) {
+      url.searchParams.delete("sslmode");
+    }
+
     return { url: url.toString(), sslMode };
   } catch {
     return { url: raw, sslMode: null };
