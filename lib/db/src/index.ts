@@ -11,6 +11,8 @@ if (!process.env.DATABASE_URL) {
   );
 }
 
+// Normalize the database URL for environments like Render where
+// local filesystem cert paths are not available.
 function normalizeDatabaseUrl(raw: string) {
   try {
     const url = new URL(raw);

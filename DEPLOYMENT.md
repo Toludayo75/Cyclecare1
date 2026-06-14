@@ -85,6 +85,8 @@ Value: (you'll get this when creating public site on Netlify)
 > Render uses its own dynamically assigned port. The app is already configured to bind to `process.env.PORT`.
 
 > For `DATABASE_URL`, use the Aiven-provided connection string and remove any local file path references like `sslrootcert=C:/Users/Hp/.../ca.pem`. Render cannot access files on your local machine.
+>
+> The API already includes runtime normalization for `DATABASE_URL`: it strips unreachable local `sslrootcert` paths and enables TLS connection fallback when PostgreSQL SSL is required. Still, the secret must not contain a local certificate path.
 
 ### Step 4: Deploy
 1. Render will auto-deploy from your GitHub repo
