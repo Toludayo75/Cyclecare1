@@ -100,6 +100,11 @@ app.use("/api", (req, res, next) => {
 
 app.use("/api", router);
 
+// 404 handler - must come before error handler
+app.use("/api", (_req, res) => {
+  res.status(404).json({ error: "Endpoint not found" });
+});
+
 // Error handler
 app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
   if (err?.message === "CORS origin denied") {
