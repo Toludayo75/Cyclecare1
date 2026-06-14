@@ -16,7 +16,9 @@
     "ios": {
       "supportsTablet": false
     },
-    "android": {},
+    "android": {
+      "package": "com.cyclecare.app"
+    },
     "web": {
       "favicon": "./assets/images/icon.png"
     },
@@ -28,6 +30,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "apiUrl": "http://localhost:5001",
+      "eas": {
+        "projectId": "6297800d-a4cd-4030-91a7-a098915db69f"
+      }
     }
   }
 }
