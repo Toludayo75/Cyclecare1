@@ -23,10 +23,21 @@ function parseAuthUserId(req: Request): number | null {
   }
 }
 
-function getApiBaseUrl(): string {
+function getApiBaseUrl(req?: Request): string {
   const configuredUrl = process.env["API_BASE_URL"]?.trim();
   if (configuredUrl) {
     return configuredUrl.replace(/\/+$/, "");
+  }
+
+  if (req) {
+    const forwardedHost = String(req.headers["x-forwarded-host"] ?? req.headers.host ?? "").trim();
+    const forwardedProto = String(req.headers["x-forwarded-proto"] ?? "").trim();
+    const host = forwardedHost || String(req.headers.host ?? "").trim();
+
+    if (host) {
+      const proto = forwardedProto || (req.protocol ? String(req.protocol).trim() : "https");
+      return `${proto}://${host}`.replace(/\/+$/, "");
+    }
   }
 
   const port = process.env["PORT"]?.trim() ?? "5001";
@@ -65,7 +76,7 @@ router.post("/donations/initialize", async (req, res): Promise<void> => {
   const email = user?.email?.trim() || "donor@cyclecare.app";
 
   try {
-    const callbackUrl = `${getApiBaseUrl()}/api/donations/verify`;
+    const callbackUrl = `${getApiBaseUrl(req)}/api/donations/verify`;
     const data = await initializePaystackTransaction({
       email,
       amount: Math.round(amount * 100),
