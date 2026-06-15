@@ -9,7 +9,10 @@ function resolveApiUrl() {
     }
     return `http://${domain.replace(/\/+$/, "")}`;
   }
-  return "http://localhost:5001";
+  if (process.env.NODE_ENV === "development") {
+    return "https://cyclecare-api.onrender.com";
+  }
+  return "https://cyclecare-api.onrender.com";
 }
 
 export default ({ config }) => {

@@ -33,7 +33,7 @@
       "reactCompiler": true
     },
     "extra": {
-      "apiUrl": "http://localhost:5001",
+      "apiUrl": "https://cyclecare-api.onrender.com",
       "eas": {
         "projectId": "6297800d-a4cd-4030-91a7-a098915db69f"
       }

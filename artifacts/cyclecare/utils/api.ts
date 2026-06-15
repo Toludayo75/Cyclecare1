@@ -29,7 +29,7 @@ export function getApiBaseUrl(): string {
     return window.location.origin;
   }
 
-  return "http://localhost:5000";
+  return "https://cyclecare-api.onrender.com";
 }
 
 export function getApiUrl(path: string): string {
