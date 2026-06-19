@@ -25,7 +25,7 @@ export async function getExpoPushTokenAsync(): Promise<string | null> {
 
 export async function registerPushTokenOnServer(expoToken: string, authToken?: string) {
   try {
-    const res = await fetch(getApiUrl("/notifications/register-token"), {
+    const res = await fetch(getApiUrl("/api/notifications/register-token"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",

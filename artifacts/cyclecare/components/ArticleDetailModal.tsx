@@ -97,6 +97,7 @@ export function ArticleDetailModal({ article, onClose }: Props) {
 
             <View style={styles.body}>
               {renderBody(article.body ?? (article.bodyKey ? t(article.bodyKey) : ""), colors)}
+            </View>
 
             <View style={[styles.footer, { backgroundColor: colors.secondary + "10", borderRadius: colors.radius }]}>
               <Feather name="info" size={15} color={colors.secondary} />

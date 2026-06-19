@@ -61,7 +61,7 @@ export default function SupportScreen() {
     async function loadArticles() {
       setLoadingArticles(true);
       try {
-        const res = await fetch(getApiUrl(`/articles?lang=${language}`));
+        const res = await fetch(getApiUrl(`/api/articles?lang=${language}`));
         if (!res.ok) {
           throw new Error("Failed to load articles");
         }
