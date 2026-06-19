@@ -1,5 +1,4 @@
 #!/usr/bin/env node
-import fetch from 'node-fetch';
 
 const API_BASE = (process.env.API_BASE_URL || process.env.API_URL || process.env.EXPRESS_PUBLIC_API_URL || 'https://cyclecare-api.onrender.com').replace(/\/+$/,'');
 const secret = process.env.TASKS_SECRET;

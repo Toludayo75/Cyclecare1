@@ -1,4 +1,3 @@
-import fetch from 'node-fetch';
 import { db, pushTokensTable, cycleProfilesTable, usersTable } from '@workspace/db';
 
 export type ExpoPushMessage = {
