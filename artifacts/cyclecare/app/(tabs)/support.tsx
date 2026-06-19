@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Feather } from "@/components/Icon";
 import { useColors } from "@/hooks/useColors";
 import { useTranslation } from "@/context/LanguageContext";
+import { getApiUrl } from "@/utils/api";
 import { ArticleDetailModal, type Article } from "@/components/ArticleDetailModal";
 import { ContactSupportModal } from "@/components/ContactSupportModal";
 
@@ -25,42 +26,17 @@ const CATEGORIES = [
   { icon: "shield",   labelKey: "catReproHealth",      value: "catReproHealth" },
   { icon: "book",     labelKey: "catEducation",        value: "catEducation" },
   { icon: "sun",      labelKey: "catWellness",         value: "catWellness" },
+  { icon: "shield",   labelKey: "catSupport",          value: "catSupport" },
 ];
 
-const ARTICLES: (Omit<Article, "readTime"> & { readTime: string; filterCategories: string[] })[] = [
-  {
-    titleKey:   "article1Title",
-    excerptKey: "article1Excerpt",
-    bodyKey:    "article1Body",
-    categoryKey: "catEducation",
-    readTime:   "4",
-    filterCategories: ["catEducation", "catIrregularPeriods"],
-  },
-  {
-    titleKey:   "article2Title",
-    excerptKey: "article2Excerpt",
-    bodyKey:    "article2Body",
-    categoryKey: "catWellness",
-    readTime:   "3",
-    filterCategories: ["catWellness", "catCramps", "catPmsMood"],
-  },
-  {
-    titleKey:   "article3Title",
-    excerptKey: "article3Excerpt",
-    bodyKey:    "article3Body",
-    categoryKey: "catHygiene",
-    readTime:   "2",
-    filterCategories: ["catHygiene", "catFirstPeriod"],
-  },
-  {
-    titleKey:   "article4Title",
-    excerptKey: "article4Excerpt",
-    bodyKey:    "article4Body",
-    categoryKey: "catSupport",
-    readTime:   "2",
-    filterCategories: ["catSupport", "catReproHealth"],
-  },
-];
+type RemoteArticle = {
+  id: number;
+  title: string;
+  excerpt: string;
+  body: string;
+  category: string;
+  readMin: number;
+};
 
 const FAQS = [
   { qKey: "faq1Q", aKey: "faq1A" },
@@ -71,23 +47,45 @@ const FAQS = [
 export default function SupportScreen() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
-  const { t } = useTranslation();
+  const { language, t } = useTranslation();
 
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [expandedFaq, setExpandedFaq] = useState<number | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<Article | null>(null);
   const [showContact, setShowContact] = useState(false);
+  const [articles, setArticles] = useState<RemoteArticle[]>([]);
+  const [loadingArticles, setLoadingArticles] = useState(true);
 
-  const filtered = ARTICLES.filter(a => {
+  useEffect(() => {
+    async function loadArticles() {
+      setLoadingArticles(true);
+      try {
+        const res = await fetch(getApiUrl(`/articles?lang=${language}`));
+        if (!res.ok) {
+          throw new Error("Failed to load articles");
+        }
+        const data = await res.json();
+        setArticles(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.warn("Error loading articles", err);
+        setArticles([]);
+      } finally {
+        setLoadingArticles(false);
+      }
+    }
+
+    loadArticles();
+  }, [language]);
+
+  const filtered = articles.filter((a) => {
     const matchesSearch =
       !search ||
-      t(a.titleKey).toLowerCase().includes(search.toLowerCase()) ||
-      t(a.categoryKey).toLowerCase().includes(search.toLowerCase()) ||
-      t(a.excerptKey).toLowerCase().includes(search.toLowerCase());
+      a.title.toLowerCase().includes(search.toLowerCase()) ||
+      t(a.category).toLowerCase().includes(search.toLowerCase()) ||
+      a.excerpt.toLowerCase().includes(search.toLowerCase());
 
-    const matchesCategory =
-      !activeCategory || a.filterCategories.includes(activeCategory);
+    const matchesCategory = !activeCategory || a.category === activeCategory;
 
     return matchesSearch && matchesCategory;
   });
@@ -162,54 +160,56 @@ export default function SupportScreen() {
         <Text style={[styles.sectionLabel, { color: colors.mutedForeground, fontFamily: "Inter_600SemiBold" }]}>
           {t("articlesLabel")}
         </Text>
-        {filtered.length === 0 ? (
-          <View style={[styles.emptySearch, { backgroundColor: colors.card, borderRadius: colors.radius }]}>
+        {loadingArticles ? (
+          <View style={[styles.emptySearch, { backgroundColor: colors.card, borderRadius: colors.radius }]}> 
+            <Text style={[styles.emptySearchText, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}> 
+              Loading...
+            </Text>
+          </View>
+        ) : filtered.length === 0 ? (
+          <View style={[styles.emptySearch, { backgroundColor: colors.card, borderRadius: colors.radius }]}> 
             <Feather name="search" size={20} color={colors.mutedForeground} />
-            <Text style={[styles.emptySearchText, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
+            <Text style={[styles.emptySearchText, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}> 
               {t("noArticlesFound")}
             </Text>
             <TouchableOpacity onPress={() => { setSearch(""); setActiveCategory(null); }}>
-              <Text style={[styles.clearFilter, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
+              <Text style={[styles.clearFilter, { color: colors.primary, fontFamily: "Inter_500Medium" }]}> 
                 {t("clearFilters")}
               </Text>
             </TouchableOpacity>
           </View>
         ) : (
-          filtered.map((article, i) => (
+          filtered.map((article) => (
             <TouchableOpacity
-              key={i}
+              key={article.id}
               style={[styles.articleCard, { backgroundColor: colors.card, borderRadius: colors.radius }]}
               onPress={() =>
                 setSelectedArticle({
-                  titleKey: article.titleKey,
-                  bodyKey: article.bodyKey,
-                  excerptKey: article.excerptKey,
-                  categoryKey: article.categoryKey,
-                  readTime: `${article.readTime} ${t("readMin")} read`,
+                  title: article.title,
+                  body: article.body,
+                  excerpt: article.excerpt,
+                  categoryKey: article.category,
+                  readTime: `${article.readMin} ${t("readMin")} read`,
                 })
               }
               activeOpacity={0.8}
             >
               <View style={styles.articleMeta}>
-                <Text style={[styles.articleCategory, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
-                  {t(article.categoryKey)}
+                <Text style={[styles.articleCategory, { color: colors.primary, fontFamily: "Inter_500Medium" }]}> 
+                  {t(article.category)}
                 </Text>
                 <View style={styles.readTime}>
                   <Feather name="clock" size={11} color={colors.mutedForeground} />
-                  <Text style={[styles.readTimeText, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-                    {article.readTime} {t("readMin")}
+                  <Text style={[styles.readTimeText, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}> 
+                    {article.readMin} {t("readMin")}
                   </Text>
                 </View>
               </View>
-              <Text style={[styles.articleTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}>
-                {t(article.titleKey)}
+              <Text style={[styles.articleTitle, { color: colors.foreground, fontFamily: "Inter_600SemiBold" }]}> 
+                {article.title}
               </Text>
-              <Text style={[styles.articleExcerpt, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
-                {t(article.excerptKey)}
-              </Text>
-              <View style={styles.readMore}>
-                <Text style={[styles.readMoreText, { color: colors.primary, fontFamily: "Inter_500Medium" }]}>
-                  {t("readArticle")}
+              <Text style={[styles.articleExcerpt, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}> 
+                {article.excerpt}
                 </Text>
                 <Feather name="arrow-right" size={13} color={colors.primary} />
               </View>

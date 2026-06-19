@@ -14,9 +14,12 @@ import { useColors } from "@/hooks/useColors";
 import { useTranslation } from "@/context/LanguageContext";
 
 export interface Article {
-  titleKey: string;
-  bodyKey: string;
-  excerptKey: string;
+  title?: string;
+  titleKey?: string;
+  body?: string;
+  bodyKey?: string;
+  excerpt?: string;
+  excerptKey?: string;
   categoryKey: string;
   readTime: string;
 }
@@ -80,12 +83,12 @@ export function ArticleDetailModal({ article, onClose }: Props) {
             </View>
 
             <Text style={[styles.title, { color: colors.foreground, fontFamily: "Inter_700Bold" }]}>
-              {t(article.titleKey)}
+              {article.title ?? (article.titleKey ? t(article.titleKey) : "")}
             </Text>
 
             <View style={styles.meta}>
               <Feather name="clock" size={13} color={colors.mutedForeground} />
-              <Text style={[styles.readTime, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}>
+              <Text style={[styles.readTime, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}> 
                 {article.readTime}
               </Text>
             </View>
@@ -93,8 +96,7 @@ export function ArticleDetailModal({ article, onClose }: Props) {
             <View style={[styles.divider, { backgroundColor: colors.border }]} />
 
             <View style={styles.body}>
-              {renderBody(t(article.bodyKey), colors)}
-            </View>
+              {renderBody(article.body ?? (article.bodyKey ? t(article.bodyKey) : ""), colors)}
 
             <View style={[styles.footer, { backgroundColor: colors.secondary + "10", borderRadius: colors.radius }]}>
               <Feather name="info" size={15} color={colors.secondary} />
