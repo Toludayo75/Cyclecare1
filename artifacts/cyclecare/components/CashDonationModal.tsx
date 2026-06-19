@@ -15,6 +15,8 @@ import { useColors } from "@/hooks/useColors";
 import { useTranslation } from "@/context/LanguageContext";
 import { useAuth } from "@/context/AuthContext";
 import { getApiUrl } from "@/utils/api";
+import { useNotifications } from "@/components/NotificationProvider";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface CashDonationModalProps {
   visible: boolean;
@@ -32,6 +34,7 @@ export function CashDonationModal({ visible, onClose, anonymousMode }: CashDonat
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
+  const { show } = useNotifications();
 
   useEffect(() => {
     if (!visible) {
@@ -46,7 +49,9 @@ export function CashDonationModal({ visible, onClose, anonymousMode }: CashDonat
   async function handleSubmit() {
     const parsedAmount = Number(amount.trim());
     if (!parsedAmount || parsedAmount <= 0) {
-      setError(t("donationAmountInvalid"));
+      const msg = t("donationAmountInvalid");
+      setError(msg);
+      show(msg);
       return;
     }
 
@@ -91,10 +96,13 @@ export function CashDonationModal({ visible, onClose, anonymousMode }: CashDonat
 
       const payload = await response.json();
       if (!response.ok) {
-        setError(payload?.error || t("donationError"));
+        const msg = payload?.error || t("donationError");
+        setError(msg);
+        show(msg);
       } else if (payload.authorizationUrl) {
         const authUrl = payload.authorizationUrl as string;
 
+        show(t("donationRedirecting"));
         if (Platform.OS === "web") {
           window.location.href = authUrl;
         } else {

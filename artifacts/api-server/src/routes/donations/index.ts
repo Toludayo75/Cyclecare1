@@ -240,7 +240,6 @@ router.get("/donations/verify", async (req, res): Promise<void> => {
     const referer = String(req.headers.referer ?? "");
     const ua = String(req.headers["user-agent"] ?? "");
     const looksLikeBrowser = /^https?:\/\//i.test(referer) || /mozilla|chrome|safari|firefox/i.test(ua);
-    const primaryUrl = looksLikeBrowser ? webUrl : appUrl;
 
     req.log.info({
       appUrl,
@@ -248,7 +247,6 @@ router.get("/donations/verify", async (req, res): Promise<void> => {
       referer,
       ua,
       looksLikeBrowser,
-      primaryUrl,
       FRONTEND_URL: process.env.FRONTEND_URL,
       EXPO_PUBLIC_DOMAIN: process.env.EXPO_PUBLIC_DOMAIN,
     }, "Donation verify request routing");
@@ -376,9 +374,9 @@ router.get("/donations/verify", async (req, res): Promise<void> => {
     <div class="redirect-info">
       <div>Returning to CycleCare in <span class="countdown"><span id="countdown">5</span>s</span></div>
     </div>
-    <a href="${primaryUrl}" class="fallback-link">Return Now</a>
+    <a href="${appUrl}" class="fallback-link">Return Now</a>
     <div class="alt-options">
-      If redirecting doesn't work:<br>
+      If the app does not open automatically:<br>
       <a href="${appUrl}">Open App</a> · <a href="${webUrl}">Web Version</a>
     </div>
   </div>
@@ -389,7 +387,7 @@ router.get("/donations/verify", async (req, res): Promise<void> => {
     function updateCountdown() {
       countdownEl.textContent = seconds;
       if (seconds <= 0) {
-        window.location.href = '${primaryUrl}';
+        window.location.href = '${appUrl}';
       } else {
         seconds--;
         setTimeout(updateCountdown, 1000);

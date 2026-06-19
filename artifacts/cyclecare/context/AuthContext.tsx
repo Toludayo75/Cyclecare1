@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { getExpoPushTokenAsync, registerPushTokenOnServer } from "@/hooks/usePushNotifications";
 
 const TOKEN_KEY = "cyclecare_token";
 const USER_KEY = "cyclecare_user";
@@ -72,6 +73,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ]);
     setToken(newToken);
     setUser(newUser);
+    // Try to register push token after login (best-effort)
+    try {
+      const expoToken = await getExpoPushTokenAsync();
+      if (expoToken) {
+        registerPushTokenOnServer(expoToken, newToken).catch(() => undefined);
+      }
+    } catch {
+      // ignore
+    }
   }
 
   async function logout() {

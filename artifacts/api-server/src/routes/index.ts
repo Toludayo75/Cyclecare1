@@ -8,8 +8,10 @@ import articlesRouter from "./articles";
 import adminRouter from "./admin";
 import ngoRouter from "./ngo";
 import publicRouter from "./public";
+import notificationsRouter from "./notifications";
 
 const router: IRouter = Router();
+import tasksRouter from "./tasks";
 
 router.use(healthRouter);
 router.use(authRouter);
@@ -20,5 +22,7 @@ router.use(articlesRouter);
 router.use(adminRouter);
 router.use(ngoRouter);
 router.use(publicRouter);
+router.use(notificationsRouter);
+router.use(tasksRouter);
 
 export default router;

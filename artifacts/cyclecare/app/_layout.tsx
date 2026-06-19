@@ -18,6 +18,8 @@ import { getApiBaseUrl } from "@/utils/api";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { AuthProvider } from "@/context/AuthContext";
 import { LanguageProvider } from "@/context/LanguageContext";
+import { NotificationProvider } from "@/components/NotificationProvider";
+import { PushNotificationManager } from "@/components/PushNotificationManager";
 
 const apiBaseUrl = getApiBaseUrl();
 if (apiBaseUrl) {
@@ -61,11 +63,14 @@ export default function RootLayout() {
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
             <LanguageProvider>
-              <GestureHandlerRootView>
-                <KeyboardProvider>
-                  <RootLayoutNav />
-                </KeyboardProvider>
-              </GestureHandlerRootView>
+              <NotificationProvider>
+                <PushNotificationManager />
+                <GestureHandlerRootView>
+                  <KeyboardProvider>
+                    <RootLayoutNav />
+                  </KeyboardProvider>
+                </GestureHandlerRootView>
+              </NotificationProvider>
             </LanguageProvider>
           </AuthProvider>
         </QueryClientProvider>
