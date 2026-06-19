@@ -210,9 +210,8 @@ export default function SupportScreen() {
               </Text>
               <Text style={[styles.articleExcerpt, { color: colors.mutedForeground, fontFamily: "Inter_400Regular" }]}> 
                 {article.excerpt}
-                </Text>
-                <Feather name="arrow-right" size={13} color={colors.primary} />
-              </View>
+              </Text>
+              <Feather name="arrow-right" size={13} color={colors.primary} />
             </TouchableOpacity>
           ))
         )}
