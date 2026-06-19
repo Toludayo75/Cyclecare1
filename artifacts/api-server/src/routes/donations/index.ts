@@ -254,10 +254,257 @@ router.get("/donations/verify", async (req, res): Promise<void> => {
     }, "Donation verify request routing");
 
     res.setHeader("Content-Type", "text/html");
-    res.send(`<!doctype html><html><head><title>Donation confirmed</title></head><body style="font-family:system-ui, sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="max-width:480px;text-align:center;padding:24px;"><h1>Donation confirmed</h1><p>Your payment of ₦${result.amount} was successful.</p><p><a href="${primaryUrl}">Return to CycleCare</a></p><p style="margin-top:16px;font-size:0.9rem;color:#6b7280;">If that doesn't work, use these options:<br/><a href="${appUrl}">Open CycleCare app</a> · <a href="${webUrl}">Return to CycleCare web</a></p></div></body></html>`);
+    const successHtml = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Donation confirmed</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #E96C8A 0%, #d946a0 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 48px 32px;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      animation: slideUp 0.6s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .checkmark {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: #E96C8A;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.2s both;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .checkmark::after {
+      content: '✓';
+      color: white;
+      font-size: 48px;
+      font-weight: bold;
+      line-height: 1;
+    }
+    h1 {
+      font-size: 28px;
+      color: #1f2937;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    .amount {
+      font-size: 32px;
+      color: #E96C8A;
+      font-weight: 700;
+      margin: 16px 0;
+    }
+    .message {
+      font-size: 15px;
+      color: #6b7280;
+      margin: 20px 0;
+      line-height: 1.5;
+    }
+    .redirect-info {
+      font-size: 13px;
+      color: #9ca3af;
+      margin-top: 24px;
+      padding: 12px;
+      background: #f9fafb;
+      border-radius: 8px;
+    }
+    .countdown {
+      font-weight: 600;
+      color: #E96C8A;
+      margin-top: 12px;
+    }
+    .fallback-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 32px;
+      background: #E96C8A;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .fallback-link:hover {
+      background: #d946a0;
+    }
+    .alt-options {
+      margin-top: 24px;
+      font-size: 12px;
+      color: #9ca3af;
+    }
+    .alt-options a {
+      color: #E96C8A;
+      text-decoration: none;
+      margin: 0 8px;
+      font-weight: 500;
+    }
+    .alt-options a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="checkmark"></div>
+    <h1>Thank you for donating!</h1>
+    <div class="amount">₦${result.amount}</div>
+    <p class="message">Your donation helps provide menstrual health resources to those who need them most.</p>
+    <div class="redirect-info">
+      <div>Returning to CycleCare in <span class="countdown"><span id="countdown">5</span>s</span></div>
+    </div>
+    <a href="${primaryUrl}" class="fallback-link">Return Now</a>
+    <div class="alt-options">
+      If redirecting doesn't work:<br>
+      <a href="${appUrl}">Open App</a> · <a href="${webUrl}">Web Version</a>
+    </div>
+  </div>
+  <script>
+    let seconds = 5;
+    const countdownEl = document.getElementById('countdown');
+    
+    function updateCountdown() {
+      countdownEl.textContent = seconds;
+      if (seconds <= 0) {
+        window.location.href = '${primaryUrl}';
+      } else {
+        seconds--;
+        setTimeout(updateCountdown, 1000);
+      }
+    }
+    
+    updateCountdown();
+  </script>
+</body>
+</html>`;
+    res.send(successHtml);
   } catch (error) {
     res.status(500).setHeader("Content-Type", "text/html");
-    res.send(`<!doctype html><html><head><title>Donation failed</title></head><body style="font-family:system-ui, sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;"><div style="max-width:480px;text-align:center;padding:24px;"><h1>Donation verification failed</h1><p>${String(error instanceof Error ? error.message : "Unable to verify transaction.")}</p></div></body></html>`);
+    const errorMsg = String(error instanceof Error ? error.message : "Unable to verify transaction.");
+    const errorHtml = `<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Donation failed</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 20px;
+      padding: 48px 32px;
+      max-width: 420px;
+      text-align: center;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+      animation: slideUp 0.6s ease-out;
+    }
+    @keyframes slideUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .icon {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: #ef4444;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      animation: popIn 0.6s cubic-bezier(0.68, -0.55, 0.265, 1.55) 0.2s both;
+    }
+    @keyframes popIn {
+      from { opacity: 0; transform: scale(0); }
+      to { opacity: 1; transform: scale(1); }
+    }
+    .icon::after {
+      content: '✕';
+      color: white;
+      font-size: 48px;
+      font-weight: bold;
+      line-height: 1;
+    }
+    h1 {
+      font-size: 28px;
+      color: #1f2937;
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+    .message {
+      font-size: 15px;
+      color: #6b7280;
+      margin: 20px 0;
+      line-height: 1.5;
+    }
+    .error-detail {
+      font-size: 13px;
+      color: #9ca3af;
+      background: #f9fafb;
+      padding: 12px;
+      border-radius: 8px;
+      margin: 20px 0;
+      border-left: 4px solid #ef4444;
+    }
+    .retry-link {
+      display: inline-block;
+      margin-top: 20px;
+      padding: 12px 32px;
+      background: #ef4444;
+      color: white;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    .retry-link:hover {
+      background: #dc2626;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="icon"></div>
+    <h1>Donation failed</h1>
+    <p class="message">We couldn't verify your donation at this time.</p>
+    <div class="error-detail">${errorMsg}</div>
+    <p class="message" style="font-size: 13px;">Please try again or contact support if the problem continues.</p>
+    <a href="cyclecare://" class="retry-link">Return to CycleCare</a>
+  </div>
+</body>
+</html>`;
+    res.send(errorHtml);
   }
 });
 
